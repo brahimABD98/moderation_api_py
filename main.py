@@ -81,7 +81,8 @@ async def text_moderation(text: str, background_task: BackgroundTasks):
 async def moderation_status(task: str):
     global redis_client
     data = await redis_client.get(task)
-    return {"data": data}
+    data_dict = json.loads(data)
+    return {**data_dict}
 
 
 def new_task_entry():

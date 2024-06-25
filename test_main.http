@@ -1,0 +1,18 @@
+POST http://localhost:80/api/item
+Content-Type: application/x-www-form-urlencoded
+
+id = 99 &
+content = new-element
+
+###
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+###

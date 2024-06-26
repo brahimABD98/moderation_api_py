@@ -3,11 +3,10 @@ import json
 import subprocess
 import uuid
 from datetime import datetime
-from fastapi import FastAPI, UploadFile, BackgroundTasks
-from PIL import Image
+from fastapi import FastAPI, UploadFile
 import redis.asyncio as redis
 from app_settings import Settings
-from tasks import image_moderation_task, text_moderation_task
+from celery_config import celery_app
 from model import Moderation
 from dtos import ModerationResponse
 
@@ -24,14 +23,14 @@ flower_worker: subprocess.Popen
 def start_celery_worker():
     global celery_worker
     celery_worker = subprocess.Popen(
-        ["celery", "-A", "celeryconfig.celery_app", "worker", "--loglevel=info"]
+        ["celery", "-A", "celery_config.celery_app", "worker", "--loglevel=info", "--pool=solo"]
     )
 
 
 def start_flower_worker():
     global flower_worker
     flower_worker = subprocess.Popen(
-        ["celery", "--broker", settings.redis_db_url, "flower"]
+        ["celery", "-A", "celery_config.celery_app", "flower", "--persistent=True --state_save_interval=5"]
     )
 
 
@@ -81,26 +80,23 @@ async def say_hello(name: str):
 @app.post(
     "/api/v1/moderation/image", tags=["moderation"], response_model=ModerationResponse
 )
-async def image_moderation(image: UploadFile, background_task: BackgroundTasks):
+async def image_moderation(image: UploadFile):
     global redis_client
-    enc_image = Image.open(image.file)
-    task_id = str(uuid.uuid4())
-    data = new_task_entry()
-    await redis_client.set(task_id, data)
-    background_task.add_task(image_moderation_task, enc_image, redis_client, task_id)
-    return ModerationResponse(task_id=task_id, created_at=now)
+    enc_image = await image.read()
+    task = celery_app.send_task('tasks.image_moderation_task', args=[enc_image])
+    return ModerationResponse(task_id=task.id, created_at=now)
 
 
 @app.post(
     "/api/v1/moderation/text", tags=["moderation"], response_model=ModerationResponse
 )
-async def text_moderation(text: str, background_task: BackgroundTasks):
+async def text_moderation(text: str):
     global redis_client
     task_id = str(uuid.uuid4())
     data = new_task_entry()
     await redis_client.set(task_id, data)
-    background_task.add_task(text_moderation_task, text, redis_client, task_id)
-    return ModerationResponse(task_id=task_id, created_at=now)
+    task = celery_app.send_task('tasks.text_moderation_task', args=[text])
+    return ModerationResponse(task_id=task.id, created_at=now)
 
 
 @app.get("/api/v1/moderation/{task}", tags=["moderation"])

@@ -51,7 +51,7 @@ def generate_image_summary(moderation_result: List[Dict[str, float]]) -> str:
     summary = (
         f"The image contains harmful content: {', '.join(harmful_content)}"
         if harmful_content
-        else ("The image " "is safe.")
+        else "The image " "is safe."
     )
     return summary
 

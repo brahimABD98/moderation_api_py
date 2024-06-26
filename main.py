@@ -30,7 +30,7 @@ def start_celery_worker():
 def start_flower_worker():
     global flower_worker
     flower_worker = subprocess.Popen(
-        ["celery", "-A", "celery_config.celery_app", "flower", "--persistent=True --state_save_interval=5"]
+        ["celery", "-A", "celery_config.celery_app", "flower", "--persistent=True", "--state_save_interval=5"]
     )
 
 

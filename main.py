@@ -1,31 +1,50 @@
+import atexit
 import json
-import os
+import subprocess
 import uuid
 from datetime import datetime
-
-from dotenv import load_dotenv
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from fastapi import FastAPI, UploadFile, BackgroundTasks
 from PIL import Image
 import redis.asyncio as redis
+from app_settings import Settings
 from tasks import image_moderation_task, text_moderation_task
 from model import Moderation
 from dtos import ModerationResponse
 
-load_dotenv()
-
-
-class Settings(BaseSettings):
-    redis_db_url: str = os.environ.get("DATABASE_URL")
-
-
 now = str(datetime.now())
-
 settings = Settings()
 app = FastAPI()
 model = Moderation()
 pool = redis.ConnectionPool.from_url(settings.redis_db_url)
 redis_client: redis.Redis
+celery_worker: subprocess.Popen
+flower_worker: subprocess.Popen
+
+
+def start_celery_worker():
+    global celery_worker
+    celery_worker = subprocess.Popen(
+        ["celery", "-A", "celeryconfig.celery_app", "worker", "--loglevel=info"]
+    )
+
+
+def start_flower_worker():
+    global flower_worker
+    flower_worker = subprocess.Popen(
+        ["celery", "--broker", settings.redis_db_url, "flower"]
+    )
+
+
+def stop_flower_worker():
+    global flower_worker
+    flower_worker.terminate()
+    celery_worker.wait()
+
+
+def stop_celery_worker():
+    global celery_worker
+    celery_worker.terminate()
+    celery_worker.wait()
 
 
 @app.on_event("startup")
@@ -33,21 +52,24 @@ async def startup():
     global redis_client
     redis_client = redis.Redis.from_pool(pool)
     print(f"redis client started : {await redis_client.ping()}")
+    start_celery_worker()
+    start_flower_worker()
 
 
 @app.on_event("shutdown")
 async def shutdown():
     global redis_client
     global pool
-    if redis_client:
-        await redis_client.aclose()
+    await redis_client.aclose()
     await pool.aclose()
+    stop_celery_worker()
+    stop_flower_worker()
 
 
 @app.get("/")
 async def root():
-    await redis_client.set('my-key', json.dumps({'key': 'value'}))
-    data = await redis_client.get('my-key')
+    await redis_client.set("my-key", json.dumps({"key": "value"}))
+    data = await redis_client.get("my-key")
     return {"message": "Hello World", "data": data}
 
 
@@ -56,7 +78,9 @@ async def say_hello(name: str):
     return {"message": f"Hello {name}"}
 
 
-@app.post("/api/v1/moderation/image", tags=["moderation"], response_model=ModerationResponse)
+@app.post(
+    "/api/v1/moderation/image", tags=["moderation"], response_model=ModerationResponse
+)
 async def image_moderation(image: UploadFile, background_task: BackgroundTasks):
     global redis_client
     enc_image = Image.open(image.file)
@@ -67,7 +91,9 @@ async def image_moderation(image: UploadFile, background_task: BackgroundTasks):
     return ModerationResponse(task_id=task_id, created_at=now)
 
 
-@app.post("/api/v1/moderation/text", tags=["moderation"], response_model=ModerationResponse)
+@app.post(
+    "/api/v1/moderation/text", tags=["moderation"], response_model=ModerationResponse
+)
 async def text_moderation(text: str, background_task: BackgroundTasks):
     global redis_client
     task_id = str(uuid.uuid4())
@@ -87,3 +113,7 @@ async def moderation_status(task: str):
 
 def new_task_entry():
     return json.dumps({"status": "pending", "updated_at": now})
+
+
+atexit.register(stop_celery_worker)
+atexit.register(stop_flower_worker)

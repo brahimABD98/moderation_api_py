@@ -23,14 +23,28 @@ flower_worker: subprocess.Popen
 def start_celery_worker():
     global celery_worker
     celery_worker = subprocess.Popen(
-        ["celery", "-A", "celery_config.celery_app", "worker", "--loglevel=info", "--pool=solo"]
+        [
+            "celery",
+            "-A",
+            "celery_config.celery_app",
+            "worker",
+            "--loglevel=info",
+            "--pool=solo",
+        ]
     )
 
 
 def start_flower_worker():
     global flower_worker
     flower_worker = subprocess.Popen(
-        ["celery", "-A", "celery_config.celery_app", "flower", "--persistent=True", "--state_save_interval=5"]
+        [
+            "celery",
+            "-A",
+            "celery_config.celery_app",
+            "flower",
+            "--persistent=True",
+            "--state_save_interval=5",
+        ]
     )
 
 
@@ -83,7 +97,7 @@ async def say_hello(name: str):
 async def image_moderation(image: UploadFile):
     global redis_client
     enc_image = await image.read()
-    task = celery_app.send_task('tasks.image_moderation_task', args=[enc_image])
+    task = celery_app.send_task("tasks.image_moderation_task", args=[enc_image])
     return ModerationResponse(task_id=task.id, created_at=now)
 
 
@@ -95,7 +109,7 @@ async def text_moderation(text: str):
     task_id = str(uuid.uuid4())
     data = new_task_entry()
     await redis_client.set(task_id, data)
-    task = celery_app.send_task('tasks.text_moderation_task', args=[text])
+    task = celery_app.send_task("tasks.text_moderation_task", args=[text])
     return ModerationResponse(task_id=task.id, created_at=now)
 
 

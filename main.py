@@ -7,6 +7,7 @@ from datetime import datetime
 from celery.result import AsyncResult
 from fastapi import FastAPI, UploadFile
 import redis.asyncio as redis
+from fastapi.middleware.cors import CORSMiddleware
 
 from app_settings import Settings
 from celery_config import celery_app
@@ -15,12 +16,36 @@ from dtos import ModerationResponse
 
 now = str(datetime.now())
 settings = Settings()
-app = FastAPI()
+app = FastAPI(
+    title="moderation_api_py",
+    description="text and image moderation with pretrained AI models with celery-redis queue system",
+    version="0.1",
+    contact={
+        "github": "github.com/brahimabd98",
+        "twitter/x": "@crabgpt"
+    },
+    license_info={
+        "name": "GPL v3.0",
+        "url": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+    }
+)
 model = Moderation()
 pool = redis.ConnectionPool.from_url(settings.redis_db_url)
 redis_client: redis.Redis
 celery_worker: subprocess.Popen
 flower_worker: subprocess.Popen
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def start_celery_worker():
@@ -87,11 +112,6 @@ async def root():
     await redis_client.set("my-key", json.dumps({"key": "value"}))
     data = await redis_client.get("my-key")
     return {"message": "Hello World", "data": data}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
 
 
 @app.post(

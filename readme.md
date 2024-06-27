@@ -1,9 +1,10 @@
 # Moderation api
 
-welcome to moderation api, this api is designed for slow processing of
-images and potentially long text heavy-duty stuff,
-that's why it leverages fastapi's background tasks alongside Redis
-each endpoint will immediately return an uuid (uuid v4 to be exact).
+welcome to moderation_api_py a simple api that uses different AI models to moderate text and images in a fast and efficient way using FastAPI and Celery.
+
+Celery is used to perform the moderation tasks in the background and store the results in a Redis database.
+
+
 
 ## how to run :
 
@@ -34,6 +35,9 @@ pip install -r requirements requirements.txt
 ```
 
 **set up the .env file (checkout .env.example)**
+```shell
+cp .env.example .env
+```
 
 start the project
 
@@ -45,10 +49,20 @@ fastapi run main.py --port 8000
 
 - **make sure you have a running Redis db instance, you can check their docs for more [info](https://redis.com)**
 
-## docker:
+- docker :
+
+  ```shell
+  docker run -d --name redis-alpine -p 6379:6379 redis:alpine
+  ```
+
+## Run it with docker:
 
 You can use the provided docker
-images [here](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py)
+[image](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py) :
+
+```shell
+docker pull ghcr.io/brahimabd98/moderation_api_py:main
+```
 
 # disclaimers :
 
@@ -56,25 +70,37 @@ images [here](https://github.com/brahimABD98/moderation_api_py/pkgs/container/mo
   as the author of the different AI models, these kinds of classifications
   shouldn't be taken at face value and human intervention should
   present for the final decision.
-- performance: this API uses very heavy AI pretrained models they are not
-  meant for serverless environment, and it was made for to run in dedicated server
-  so execution time isn't a consideration at all and as always
-  measure because, depending on your use-case, it can perform very well even
-  within lambda constraints.
+- performance: yet to be determined.
   ## important
-    - Error handling: right now there's no any kind of error handling whatsoever, so the server is prone to **crashing**
-    - failed task: **Failed tasks will get stuck in pending status** there's no re-execution mechanism present yet,
-      future releases might address that.
-    - logging: there's no logging present at the moment so bring your own monitoring solutions
+    - Error handling: currently there's no proper error handling, so the server is prone to **crashing**
+    - logging: right there's no good structured logging we plan to add in the future
+
+## screeshots:
+
+### swagger ui [http://localhost:8000/docs](http://localhost:8000/docs)
+
+![alt text](assets/swaggerui.png)
+flower dashboard [http://localhost:5555](http://localhost:5555)
+
+### task list:
+
+![alt text](assets/tasks.png)
+
+### task:
+
+![alt text](assets/task.png)
 
 ## features:
 
-* Image moderation:
+* task execution with celery queue you can follow the state of each task with either the /task endpoint or by launching
+  the local flower web dashboard by visiting
+  http://localhost:5555
+* Image moderation (link below):
     * nsfw score: ranging from 0 to approx 1
     * normal score : ranging from 0 to approx 1
     * summary: to be improved, right now it just describes whether the image is nsfw with a thresh-hold of 0.5
       for better readability.
-* Text moderation:
+* Text moderation (link below) :
     * toxicity
     * severe toxicity
     * obscene
@@ -98,35 +124,28 @@ images [here](https://github.com/brahimABD98/moderation_api_py/pkgs/container/mo
 
 ## Planned Improvements:
 
-Other than using better models, of course, there are a couple of features to be considered a nice to have per se
-
-- rate limiting: limit the amount of request, so it doesn't get overwhelmed
-- failed tasks:
-    - a queue for tasks similar to kafka.
-    - Tasks that have failed won't be lost or stuck.
+- replacing Redis with another KV db or switch to a message-broker (RabbitMQ or Kafka...)
+- testing
+- automatic task re-execution
+- rate limiting: limit the amount of request.
+- api gateway
+- api keys and quota
 - better logging:
     - tracing: provide better logging for each task performed
-- caching: Add caching for get_task endpoint
-- Bulk image moderation: Like mentioned before, this is made for heavy-duty execution, so it should be able to pass s3
-  bucket and
-  be able to mass process all content within that bucket.
-- Bulk text moderation: Maybe it could connect to a db and get certain posts or things like that.
-  I couldn't think of a solution not tightly coupled with my project. I will make it, but I doubt it will make the
-  public version
+- caching
+- task priority
+- grafana and Prometheus integration
 
 ## Non-goals (subject to change) :
 
-- Stuff like multiple images processing: I mean instead of image you get a list of images.
-- html sanitization: this is just a frontend for classification models.
-- censorship: apply blur filter or text censorship of certain words, it could be interesting but there are more
-  important features should be implemented first
-- measuring model performance: Despite being somewhat important, this won't be a goal, but it could be an interesting
-  topic for sure
+- multiple images processing
+- html sanitization
+- censorship: apply blur filter or text censorship of certain words
+- measuring model performance
 
-#### Notes:
+credit :
 
-* nsfw: not safe for work
-* AI : artificial intelligence
-* models : artificial intelligence models
+- text moderation : [detoxify](https://github.com/unitaryai/detoxify)
+- image moderation : [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection)
 
-credit: Brahim Abderrahim, 2024 
+credit: Brahim, 2024 

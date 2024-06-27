@@ -12,4 +12,6 @@ COPY . .
 
 EXPOSE 9095
 
+EXPOSE 5555
+
 CMD ["fastapi","run","app/main.py","--port","9095"]

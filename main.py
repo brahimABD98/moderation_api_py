@@ -3,8 +3,11 @@ import json
 import subprocess
 import uuid
 from datetime import datetime
+
+from celery.result import AsyncResult
 from fastapi import FastAPI, UploadFile
 import redis.asyncio as redis
+
 from app_settings import Settings
 from celery_config import celery_app
 from model import Moderation
@@ -115,10 +118,12 @@ async def text_moderation(text: str):
 
 @app.get("/api/v1/moderation/{task}", tags=["moderation"])
 async def moderation_status(task: str):
-    global redis_client
-    data = await redis_client.get(task)
-    data_dict = json.loads(data)
-    return {**data_dict}
+    task_result = AsyncResult(task)
+    return {
+        "task_id": task_result.id,
+        "task_status": task_result.status,
+        "task_result": task_result.result
+    }
 
 
 def new_task_entry():

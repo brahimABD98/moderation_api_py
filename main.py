@@ -1,6 +1,7 @@
 import atexit
 import json
 import subprocess
+import uuid
 from datetime import datetime
 from celery.result import AsyncResult
 from fastapi import FastAPI, UploadFile, BackgroundTasks
@@ -11,6 +12,7 @@ from src.celery_config import celery_app
 from src.model import Moderation
 from src.dtos import ModerationResponse
 from src.tasks import vid_moderation_task
+
 now = str(datetime.now())
 settings = Settings()
 app = FastAPI(
@@ -113,7 +115,7 @@ async def root():
 
 
 @app.post(
-    "/api/v1/moderation/image", tags=["moderation"], response_model=ModerationResponse
+    "/api/v1/moderation/image", tags=["moderation", "image"], response_model=ModerationResponse
 )
 async def image_moderation(image: UploadFile):
     global redis_client
@@ -123,23 +125,33 @@ async def image_moderation(image: UploadFile):
 
 
 @app.post(
-    "/api/v1/moderation/text", tags=["moderation"], response_model=ModerationResponse
+    "/api/v1/moderation/text", tags=["moderation", "text"], response_model=ModerationResponse
 )
 async def text_moderation(text: str):
     task = celery_app.send_task("src.tasks.text_moderation_task", args=[text])
     return ModerationResponse(task_id=task.id, created_at=now)
 
 
-@app.post("/api/v1/moderation/video", tags=["moderation"], response_model=ModerationResponse)
+@app.post("/api/v1/moderation/video", tags=["moderation", "video"], response_model=ModerationResponse)
 async def video_moderation(file: UploadFile, background_task: BackgroundTasks):
     video_buffer = await file.read()
     task = vid_moderation_task.apply_async(args=[video_buffer])
     return ModerationResponse(task_id=task.id, created_at=now)
 
 
+def is_valid_uuid(val):
+    try:
+        uuid.UUID(str(val))
+        return True
+    except ValueError:
+        return False
+
+
 @app.get("/api/v1/moderation/{task}", tags=["moderation"])
 async def moderation_status(task: str):
     task_result = AsyncResult(task)
+    if is_valid_uuid(task_result.result):
+        task_result = AsyncResult(task_result.result)
     return {
         "task_id": task_result.id,
         "task_status": task_result.status,
@@ -149,5 +161,3 @@ async def moderation_status(task: str):
 
 atexit.register(stop_celery_worker)
 atexit.register(stop_flower_worker)
-
-# TODO:// https://github.com/doppeltilde/image_video_classification/blob/main/README.md

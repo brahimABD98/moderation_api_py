@@ -75,7 +75,7 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
     - Error handling: currently there's no proper error handling, so the server is prone to **crashing**
     - logging: right there's no good structured logging we plan to add in the future
 
-## screeshots:
+## screenshots:
 
 ### swagger ui [http://localhost:8000/docs](http://localhost:8000/docs)
 

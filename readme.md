@@ -1,10 +1,9 @@
 # Moderation api
 
-welcome to moderation_api_py a simple api that uses different AI models to moderate text and images in a fast and efficient way using FastAPI and Celery.
+welcome to moderation_api_py a simple api that uses different AI models to moderate text and images in a fast and
+efficient way using FastAPI and Celery.
 
 Celery is used to perform the moderation tasks in the background and store the results in a Redis database.
-
-
 
 ## how to run :
 
@@ -35,6 +34,7 @@ pip install -r requirements requirements.txt
 ```
 
 **set up the .env file (checkout .env.example)**
+
 ```shell
 cp .env.example .env
 ```
@@ -80,6 +80,7 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 ### swagger ui [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ![alt text](assets/swaggerui.png)
+
 ## flower dashboard [http://localhost:5555](http://localhost:5555)
 
 ### task list:
@@ -104,46 +105,35 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
     * toxicity
     * severe toxicity
     * obscene
-    * identity attack: current identities are
-        * male
-        * female
-        * LGBT
-        * christian
-        * jewish
-        * muslim
-        * black
-        * white
-        * psychiatric_or_mental_illness
+    * identity attack (refer to detoxify docs)
     * insult
     * threat
     * sexual explicit content
     * summary: to be improved upon, right now it just describes the current issues with the text based on score
       thresh-hold of 0.5 for better readability
+* Video moderation :working, but it's still WIP
 * background tasks:
   All the moderation tasks are performed as a background task and saved inside a Redis database.
+* Authentication by api keys middleware is implemented.
 
 ## Planned Improvements:
 
-- replacing Redis with another KV db or switch to a message-broker (RabbitMQ or Kafka...)
 - testing
 - automatic task re-execution
 - rate limiting: limit the amount of request.
 - api gateway
-- api keys and quota
-- better logging:
-    - tracing: provide better logging for each task performed
 - caching
 - task priority
 - grafana and Prometheus integration
 
 ## Non-goals (subject to change) :
 
-- multiple images processing
+- multiple image processing
 - html sanitization
 - censorship: apply blur filter or text censorship of certain words
 - measuring model performance
 
-credit :
+## credits :
 
 - text moderation : [detoxify](https://github.com/unitaryai/detoxify)
 - image moderation : [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection)

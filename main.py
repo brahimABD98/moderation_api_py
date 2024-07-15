@@ -3,16 +3,15 @@ import json
 import subprocess
 import uuid
 from datetime import datetime
-
 from celery.result import AsyncResult
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, UploadFile, BackgroundTasks
 import redis.asyncio as redis
 from fastapi.middleware.cors import CORSMiddleware
-
-from app_settings import Settings
-from celery_config import celery_app
-from model import Moderation
-from dtos import ModerationResponse
+from src.app_settings import Settings
+from src.celery_config import celery_app
+from src.model import Moderation
+from src.dtos import ModerationResponse
+from src.tasks import vid_moderation_task
 
 now = str(datetime.now())
 settings = Settings()
@@ -54,10 +53,11 @@ def start_celery_worker():
         [
             "celery",
             "-A",
-            "celery_config.celery_app",
+            "src.celery_config.celery_app",
             "worker",
             "--loglevel=info",
             "--pool=solo",
+            "--concurrency=1"
         ]
     )
 
@@ -68,7 +68,7 @@ def start_flower_worker():
         [
             "celery",
             "-A",
-            "celery_config.celery_app",
+            "src.celery_config.celery_app",
             "flower",
             "--persistent=True",
             "--state_save_interval=5",
@@ -115,39 +115,48 @@ async def root():
 
 
 @app.post(
-    "/api/v1/moderation/image", tags=["moderation"], response_model=ModerationResponse
+    "/api/v1/moderation/image", tags=["moderation", "image"], response_model=ModerationResponse
 )
 async def image_moderation(image: UploadFile):
     global redis_client
     enc_image = await image.read()
-    task = celery_app.send_task("tasks.image_moderation_task", args=[enc_image])
+    task = celery_app.send_task("src.tasks.image_moderation_task", args=[enc_image])
     return ModerationResponse(task_id=task.id, created_at=now)
 
 
 @app.post(
-    "/api/v1/moderation/text", tags=["moderation"], response_model=ModerationResponse
+    "/api/v1/moderation/text", tags=["moderation", "text"], response_model=ModerationResponse
 )
 async def text_moderation(text: str):
-    global redis_client
-    task_id = str(uuid.uuid4())
-    data = new_task_entry()
-    await redis_client.set(task_id, data)
-    task = celery_app.send_task("tasks.text_moderation_task", args=[text])
+    task = celery_app.send_task("src.tasks.text_moderation_task", args=[text])
     return ModerationResponse(task_id=task.id, created_at=now)
+
+
+@app.post("/api/v1/moderation/video", tags=["moderation", "video"], response_model=ModerationResponse)
+async def video_moderation(file: UploadFile, background_task: BackgroundTasks):
+    video_buffer = await file.read()
+    task = vid_moderation_task.apply_async(args=[video_buffer])
+    return ModerationResponse(task_id=task.id, created_at=now)
+
+
+def is_valid_uuid(val):
+    try:
+        uuid.UUID(str(val))
+        return True
+    except ValueError:
+        return False
 
 
 @app.get("/api/v1/moderation/{task}", tags=["moderation"])
 async def moderation_status(task: str):
     task_result = AsyncResult(task)
+    if is_valid_uuid(task_result.result):
+        task_result = AsyncResult(task_result.result)
     return {
         "task_id": task_result.id,
         "task_status": task_result.status,
         "task_result": task_result.result
     }
-
-
-def new_task_entry():
-    return json.dumps({"status": "pending", "updated_at": now})
 
 
 atexit.register(stop_celery_worker)

@@ -26,7 +26,6 @@ Celery is used to perform the moderation tasks in the background and store the r
 * Video moderation :working, but it's still WIP
 * Authentication by api keys middleware is implemented.
 
-
 ## how to run :
 
 ### With docker:
@@ -97,7 +96,6 @@ fastapi run main.py --port 8000
 
 - **make sure you have a running Redis db instance, you can check their docs for more [info](https://redis.com)**
 
-
 You can use the provided docker
 [image](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py) :
 
@@ -120,7 +118,6 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 ### task:
 
 ![alt text](assets/task.png)
-
 
 ## Planned Improvements:
 
@@ -155,6 +152,9 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 >- logging: right there's no good structured logging we plan to add in the future
 
 [^1]: [detoxify](https://github.com/unitaryai/detoxify).
+
 [^2]: [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection).
 
-credit: Brahim, 2024 
+credit: Brahim, 2024
+
+#### footnotes

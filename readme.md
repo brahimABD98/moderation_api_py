@@ -5,6 +5,28 @@ efficient way using FastAPI and Celery.
 
 Celery is used to perform the moderation tasks in the background and store the results in a Redis database.
 
+## features:
+
+* task execution with celery queue you can follow the state of each task with either the /task endpoint or by launching
+  the local flower web dashboard by visiting
+  [http://localhost:5555](http://localhost:5555)
+* Image moderation[^1]:
+    * nsfw score
+    * normal score
+    * summary
+* Text moderation[^2] :
+    * toxicity
+    * severe toxicity
+    * obscene
+    * identity attack (refer to detoxify docs)
+    * insult
+    * threat
+    * sexual explicit content
+    * summary
+* Video moderation :working, but it's still WIP
+* Authentication by api keys middleware is implemented.
+
+
 ## how to run :
 
 ### With docker:
@@ -99,30 +121,6 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 
 ![alt text](assets/task.png)
 
-## features:
-
-* task execution with celery queue you can follow the state of each task with either the /task endpoint or by launching
-  the local flower web dashboard by visiting
-  http://localhost:5555
-* Image moderation (link below):
-    * nsfw score: ranging from 0 to approx 1
-    * normal score : ranging from 0 to approx 1
-    * summary: to be improved, right now it just describes whether the image is nsfw with a thresh-hold of 0.5
-      for better readability.
-* Text moderation (link below) :
-    * toxicity
-    * severe toxicity
-    * obscene
-    * identity attack (refer to detoxify docs)
-    * insult
-    * threat
-    * sexual explicit content
-    * summary: to be improved upon, right now it just describes the current issues with the text based on score
-      thresh-hold of 0.5 for better readability
-* Video moderation :working, but it's still WIP
-* background tasks:
-  All the moderation tasks are performed as a background task and saved inside a Redis database.
-* Authentication by api keys middleware is implemented.
 
 ## Planned Improvements:
 
@@ -155,5 +153,8 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 >- performance: yet to be determined.
 >- Error handling: currently there's no proper error handling, so the server is prone to **crashing**
 >- logging: right there's no good structured logging we plan to add in the future
+
+[^1]: [detoxify](https://github.com/unitaryai/detoxify).
+[^2]: [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection).
 
 credit: Brahim, 2024 

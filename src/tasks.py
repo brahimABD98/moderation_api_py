@@ -2,10 +2,10 @@ import os
 import tempfile
 from datetime import datetime
 from io import BytesIO
-from celery import chord
 
 import cv2
 from PIL import Image
+from celery import chord
 
 from src.celery_config import celery_app
 from src.model import Moderation, generate_text_summary, generate_image_summary
@@ -27,7 +27,12 @@ def new_text_response(answer, summary):
 def new_image_response(answer, summary):
     for item in answer:
         item["score"] = round(item["score"], 4)
-    return {"status": "completed", "data": answer, "summary": summary, "updated_at": now}
+    return {
+        "status": "completed",
+        "data": answer,
+        "summary": summary,
+        "updated_at": now,
+    }
 
 
 @celery_app.task
@@ -92,8 +97,8 @@ def vid_moderation_task(video_buffer: bytes, frame_skip: int = 30):
 def aggregate_summaries(results_data):
     nsfw_threshold = 0.5  # Define your NSFW score threshold here
     for result in results_data:
-        for item in result['data']:
-            if item['label'] == 'nsfw' and item['score'] >= nsfw_threshold:
+        for item in result["data"]:
+            if item["label"] == "nsfw" and item["score"] >= nsfw_threshold:
                 return "video nsfw"
 
     return "The video does not contain NSFW content"

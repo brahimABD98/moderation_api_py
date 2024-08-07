@@ -2,11 +2,10 @@ import base64
 import tempfile
 from typing import List, Dict
 
-from transformers import pipeline
-from PIL import Image
-
-from detoxify import Detoxify
 import cv2
+from PIL import Image
+from detoxify import Detoxify
+from transformers import pipeline
 
 
 class AIPipeLine:
@@ -75,13 +74,13 @@ class Moderation:
         return self.TextPipeline.predict(text)
 
     def evaluate_video(
-            self,
-            file: bytes,
-            skip_frames_percentage=30,
-            fast_mode=False,
-            labels: List[str] = ["nsfw"],
-            return_on_first_matching_label=False,
-            score=0.7,
+        self,
+        file: bytes,
+        skip_frames_percentage=30,
+        fast_mode=False,
+        labels: List[str] = ["nsfw"],
+        return_on_first_matching_label=False,
+        score=0.7,
     ):
         try:
             with tempfile.NamedTemporaryFile(delete=False) as temporary_file:

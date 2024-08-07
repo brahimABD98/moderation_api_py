@@ -7,6 +7,32 @@ Celery is used to perform the moderation tasks in the background and store the r
 
 ## how to run :
 
+### With docker:
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  api:
+    image: ghcr.io/brahimabd98/moderation_api_py:main
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "redis://redis:6379/0"
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+```
+
+docker [image](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py) :
+
+```shell
+docker pull ghcr.io/brahimabd98/moderation_api_py:main
+```
+
 ### locally with GitHub
 
 Start a new terminal session and clone the project with this command :
@@ -45,17 +71,10 @@ start the project
 fastapi run main.py --port 8000
 ```
 
-### Redis:
+#### Redis:
 
 - **make sure you have a running Redis db instance, you can check their docs for more [info](https://redis.com)**
 
-- docker :
-
-  ```shell
-  docker run -d --name redis-alpine -p 6379:6379 redis:alpine
-  ```
-
-## Run it with docker:
 
 You can use the provided docker
 [image](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py) :
@@ -64,18 +83,7 @@ You can use the provided docker
 docker pull ghcr.io/brahimabd98/moderation_api_py:main
 ```
 
-# disclaimers :
-
-- ethical considerations:
-  as the author of the different AI models, these kinds of classifications
-  shouldn't be taken at face value and human intervention should
-  present for the final decision.
-- performance: yet to be determined.
-  ## important
-    - Error handling: currently there's no proper error handling, so the server is prone to **crashing**
-    - logging: right there's no good structured logging we plan to add in the future
-
-## screenshots:
+# screenshots:
 
 ### swagger ui [http://localhost:8000/docs](http://localhost:8000/docs)
 
@@ -137,5 +145,15 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 
 - text moderation : [detoxify](https://github.com/unitaryai/detoxify)
 - image moderation : [Falconsai/nsfw_image_detection](https://huggingface.co/Falconsai/nsfw_image_detection)
+
+### disclaimers :
+
+> - ethical considerations:
+    as the author of the different AI models, these kinds of classifications
+    shouldn't be taken at face value and human intervention should
+    present for the final decision.
+>- performance: yet to be determined.
+>- Error handling: currently there's no proper error handling, so the server is prone to **crashing**
+>- logging: right there's no good structured logging we plan to add in the future
 
 credit: Brahim, 2024 

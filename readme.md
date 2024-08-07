@@ -1,15 +1,12 @@
 # Moderation api
 
-welcome to moderation_api_py a simple api that uses different AI models to moderate text and images in a fast and
+welcome to moderation_api_py a simple api that uses different AI models to moderate texts and images in a fast and
 efficient way using FastAPI and Celery.
 
 Celery is used to perform the moderation tasks in the background and store the results in a Redis database.
 
 ## features:
 
-* task execution with celery queue you can follow the state of each task with either the /task endpoint or by launching
-  the local flower web dashboard by visiting
-  [http://localhost:5555](http://localhost:5555)
 * Image moderation[^1]:
     * nsfw score
     * normal score
@@ -23,7 +20,9 @@ Celery is used to perform the moderation tasks in the background and store the r
     * threat
     * sexual explicit content
     * summary
-* Video moderation :working, but it's still WIP
+* Video moderation :working (WIP)
+* Moderation tasks execution queue with celery
+* Moderation task monitoring dashboard with flower web portal on [http://localhost:5555](http://localhost:5555)
 * Authentication by api keys middleware is implemented.
 
 ## how to run :
@@ -96,6 +95,7 @@ fastapi run main.py --port 8000
 
 - **make sure you have a running Redis db instance, you can check their docs for more [info](https://redis.com)**
 
+### docker image:
 You can use the provided docker
 [image](https://github.com/brahimABD98/moderation_api_py/pkgs/container/moderation_api_py) :
 
@@ -122,10 +122,9 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 ## Planned Improvements:
 
 - testing
-- automatic task re-execution
+- task re-execution policy
 - rate limiting: limit the amount of request.
 - api gateway
-- caching
 - task priority
 - grafana and Prometheus integration
 
@@ -157,4 +156,4 @@ docker pull ghcr.io/brahimabd98/moderation_api_py:main
 
 credit: Brahim, 2024
 
-#### footnotes
+#### footnotes:

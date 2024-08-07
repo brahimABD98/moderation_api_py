@@ -1,7 +1,8 @@
-from dotenv import load_dotenv
-from fastapi.security import APIKeyHeader
-from fastapi import Security, HTTPException, status
 import os
+
+from dotenv import load_dotenv
+from fastapi import Security, HTTPException, status
+from fastapi.security import APIKeyHeader
 
 load_dotenv()
 
@@ -18,6 +19,5 @@ def get_api_key(api_key: str = Security(api_key_header)):
         return api_key
     else:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid or missing api key"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or missing api key"
         )
